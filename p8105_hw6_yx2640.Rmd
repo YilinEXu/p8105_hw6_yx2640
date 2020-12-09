@@ -25,7 +25,7 @@ scale_fill_discrete = scale_fill_viridis_d
 theme_set(theme_minimal() + theme(legend.position = "bottom"))
 ```
 
-### Problem 1
+## Problem 1
 
 ```{r, warning=FALSE, message=FALSE}
 homicide_df = 
@@ -96,13 +96,62 @@ models_results_df %>%
 ```
 
 
-### Problem 2
+## Problem 2
 
+```{r, warning=FALSE, message=FALSE}
+birthw = read_csv("./data/birthweight.csv") %>%
+  janitor::clean_names() %>%
+  mutate(
+    babysex = factor(babysex),
+    frace = factor(frace),
+    mrace = factor(mrace),
+    malform = factor(malform)
+  )
 
+sum(is.na(birthw))
+```
 
+#### fit a model for birth weight
 
+I use Stepwise regression to find the variables that are most fit in the model.
+```{r,eval=FALSE}
+mult.fit <- lm(bwt ~ ., data=birthw)
+step(mult.fit, direction='backward')
+```
 
+From the test result above, I got my model:
+```{r}
+model_fit1 = lm(bwt ~ babysex + bhead + blength + delwt + fincome + gaweeks + 
+    mheight + mrace + parity + ppwt + smoken, data = birthw
+)
+summary(model_fit1)
+```
 
+After looking at the summary, I found out the p-value of `fincome` is greater than 0.05, and p-value of one of the `mrace` is also not significant. So I drop these two variables from my model. From the description, I think `bhead` and `blength` may overlap with `bwt`, so I dropped these two variables. After drop these three variables, `parity` becomes not significant, so I drop this variable too. Rebuild the model.
+
+```{r}
+model_fit1 = lm(bwt ~ babysex + delwt + gaweeks + 
+    mheight + ppwt + smoken, data = birthw)
+summary(model_fit1)
+```
+
+plot of residuals:
+```{r}
+birthw %>%
+  add_residuals(model_fit1) %>%
+  ggplot(aes(x = resid)) + geom_density()+
+  labs(x = "Residuals")
+```
+
+plot of model residuals against fitted values:
+```{r}
+birthw %>%
+  add_residuals(model_fit1) %>%
+  add_predictions(model_fit1) %>%
+  ggplot(aes(x = pred, y = resid)) + geom_point() +
+  labs(x = "Fitted Value",
+       y = "Residuals")
+```
 
 
 
